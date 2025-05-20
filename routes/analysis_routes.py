@@ -8,23 +8,104 @@ from modules.analysis.ml_test import test_convert_data
 
 analysis_bp = Blueprint('python-api/analysis', __name__)
 
+# 원본
+# @analysis_bp.route('', methods=['GET'])
+# def get_s3_file():
+#     file_name = request.args.get('file_name', type=str)
+#     # file_name = "local_file.txt"
+#     bucket_name = "python-aesop"
+
+#     try:
+#         s3_object = module_get_s3_file(bucket_name, file_name)
+#         return Response(
+#             s3_object['Body'].read(),
+#             mimetype=s3_object['ContentType'],
+#             headers={"Content-Disposition": f"attachment;filename={file_name}"}
+#         )
+#     except ClientError as e:
+#         return jsonify({'error': str(e)}), 404
+#     except NoCredentialsError:
+#         return jsonify({'error': 'AWS credentials not found.'}), 403
+
+# 개선 코드
+# @analysis_bp.route('', methods=['GET'])
+# def get_s3_file_from_s3():
+#     import csv
+#     import io
+
+#     info_db_no = request.args.get('infoDbNo', type=str)
+
+#     # 1️⃣ infoDbNo → 실제 파일명 매핑
+#     INFO_DB_FILE_MAP = {
+#         "1": "mock_dashboard.csv"
+#         # 다른 파일들도 필요 시 추가 가능
+#     }
+
+#     file_name = INFO_DB_FILE_MAP.get(info_db_no)
+#     if not file_name:
+#         return jsonify({'error': f'No file mapped for infoDbNo={info_db_no}'}), 404
+
+#     bucket_name = "python-aesop"
+
+#     try:
+#         # 2️⃣ S3에서 객체 가져오기 (Binary Stream)
+#         s3_object = module_get_s3_file(bucket_name, file_name)
+#         file_content = s3_object['Body'].read().decode('utf-8')
+
+#         # 3️⃣ CSV 파싱
+#         csvfile = io.StringIO(file_content)
+#         reader = csv.DictReader(csvfile)
+#         for row in reader:
+#             return jsonify({
+#                 "labels": row["labels"].split("|"),
+#                 "values": list(map(int, row["values"].split("|"))),
+#                 "total": int(row["total"]),
+#                 "active": int(row["active"]),
+#                 "new": int(row["new"]),
+#                 "churn": int(row["churn"]),
+#                 "dormant": int(row["dormant"])
+#             })
+
+#     except ClientError as e:
+#         return jsonify({'error': str(e)}), 404
+#     except NoCredentialsError:
+#         return jsonify({'error': 'AWS credentials not found.'}), 403
+
+# 테스트
 @analysis_bp.route('', methods=['GET'])
 def get_s3_file():
-    file_name = request.args.get('file_name', type=str)
-    # file_name = "local_file.txt"
-    bucket_name = "python-aesop"
+    import os
+    import csv
+
+    info_db_no = request.args.get('infoDbNo', type=str)
+
+    # ✅ 1. 번호에 따라 파일명을 매핑
+    INFO_DB_FILE_MAP = {
+        "1": "mock_dashboard.csv"
+    }
+
+    filename = INFO_DB_FILE_MAP.get(info_db_no)
+    if not filename:
+        return jsonify({'error': f'No file mapped for infoDbNo={info_db_no}'}), 404
+
+    # ✅ 2. 상대 경로로 파일 찾기
+    mock_csv_path = os.path.join(os.path.dirname(__file__), '..', 'resources', 'data', filename)
 
     try:
-        s3_object = module_get_s3_file(bucket_name, file_name)
-        return Response(
-            s3_object['Body'].read(),
-            mimetype=s3_object['ContentType'],
-            headers={"Content-Disposition": f"attachment;filename={file_name}"}
-        )
-    except ClientError as e:
-        return jsonify({'error': str(e)}), 404
-    except NoCredentialsError:
-        return jsonify({'error': 'AWS credentials not found.'}), 403
+        with open(mock_csv_path, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                return jsonify({
+                    "labels": row["labels"].split("|"),
+                    "values": list(map(int, row["values"].split("|"))),
+                    "total": int(row["total"]),
+                    "active": int(row["active"]),
+                    "new": int(row["new"]),
+                    "churn": int(row["churn"]),
+                    "dormant": int(row["dormant"])
+                })
+    except FileNotFoundError:
+        return jsonify({'error': f'File not found: {filename}'}), 404
 
 @analysis_bp.route('', methods=['POST'])
 def upload_s3_file():
