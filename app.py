@@ -1,4 +1,7 @@
 from flask import Flask
+
+# 이건 테스트 용입니다. 나중에 삭제해주세요.
+from modules.analysis.lsh_test_service import lsh_test_bp
 # from resources.config.internal_db_config import Config
 from resources.config.internal_local_db_config import Config
 from models import db
@@ -18,6 +21,8 @@ app.register_blueprint(info_column_bp, url_prefix='/python-api/info_column')
 app.register_blueprint(analysis_bp, url_prefix='/python-api/analysis')
 
 app.register_blueprint(dashboard_bp, url_prefix='/python-api/dashboard')
+
+app.register_blueprint(lsh_test_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
