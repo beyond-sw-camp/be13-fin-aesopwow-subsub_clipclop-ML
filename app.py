@@ -34,7 +34,7 @@ api_bp = Blueprint('api', __name__, url_prefix='/python-api')  # 실제 API 경�
 # Swagger UI는 '/docs'로 노출
 api = Api(api_bp,
           title='Cohort Analysis API',
-          version='1.0',
+          version='2.0',
           description='Swagger for Cohort APIs Only',
           doc='/docs'  # Swagger UI는 '/docs' 경로로 설정
 )
