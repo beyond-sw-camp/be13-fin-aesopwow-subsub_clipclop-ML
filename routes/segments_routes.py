@@ -32,6 +32,7 @@ def segment_subscription():
     try:
         df_user = convert_data(info_db_no, user_info)
         df_user = pd.DataFrame(df_user)
+        print(df_user.columns.tolist())
         df_sub = convert_data(info_db_no, user_sub_info)
         df_sub = pd.DataFrame(df_sub)
     except Exception as e:
